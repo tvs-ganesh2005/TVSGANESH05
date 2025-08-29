@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Library Management System (Web)</title>
+  <style>
+    :root{--bg:#f5f7fb;--card:#ffffff;--accent:#3b82f6;--muted:#6b7280}
+    body{font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); margin:0; padding:28px;}
+    .container{max-width:1000px; margin:0 auto}
+    h1{font-size:24px; margin:0 0 12px}
+    .card{background:var(--card); border-radius:12px; box-shadow:0 6px 18px rgba(12,18,43,0.06); padding:20px; margin-bottom:18px}
+    .grid{display:grid; grid-template-columns:repeat(6,1fr); gap:12px}
+    label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px}
+    input[type="text"], input[type="number"]{width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e6e9ef; font-size:14px; box-sizing:border-box}
+    .full{grid-column:1/-1}
+    .buttons{display:flex; gap:10px; margin-top:10px}
+    button{background:var(--accent); color:white; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600}
+    button.secondary{background:#e6eefc; color:var(--accent); font-weight:700}
+    textarea{width:100%; min-height:260px; padding:12px; border-radius:8px; border:1px solid #e6e9ef; font-family:monospace; font-size:13px}
+    .muted{color:var(--muted); font-size:13px}
+    .records-list{max-height:160px; overflow:auto; padding:8px; border-radius:8px; border:1px dashed #e6e9ef}
+    .small{font-size:13px}
+    @media (max-width:720px){.grid{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Library Management System — Web App</h1>
+
+    <div class="card">
+      <strong>Student Details</strong>
+      <div class="grid" style="margin-top:12px">
+        <div style="grid-column:span 2">
+          <label for="studentName">Name</label>
+          <input id="studentName" type="text" placeholder="Student name" />
+        </div>
+
+        <div style="grid-column:span 2">
+          <label for="rollNo">SUC No</label>
+          <input id="rollNo" type="text" placeholder="SUC / Roll number" />
+        </div>
+
+        <div style="grid-column:span 2">
+          <label for="receiptNo">Receipt No</label>
+          <input id="receiptNo" type="text" readonly />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <strong>Books</strong>
+      <div class="grid" style="margin-top:12px">
+        <div>
+          <label for="fiction">Fiction</label>
+          <input id="fiction" type="number" min="0" value="0" />
+        </div>
+        <div>
+          <label for="nonfiction">Non-Fiction</label>
+          <input id="nonfiction" type="number" min="0" value="0" />
+        </div>
+        <div>
+          <label for="journals">Journals</label>
+          <input id="journals" type="number" min="0" value="0" />
+        </div>
+        <div>
+          <label for="reference">Reference</label>
+          <input id="reference" type="number" min="0" value="0" />
+        </div>
+        <div>
+          <label for="technical">Technical</label>
+          <input id="technical" type="number" min="0" value="0" />
+        </div>
+
+        <div class="full small muted" style="margin-top:8px">Return within 30 days to avoid fine.</div>
+      </div>
+
+      <div class="buttons">
+        <button id="issueBtn">Issue Books</button>
+        <button id="clearBtn" class="secondary">Clear</button>
+        <button id="downloadAllBtn" class="secondary">Download All Records</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <strong>Receipt</strong>
+      <div style="margin-top:12px">
+        <textarea id="receiptArea" readonly></textarea>
+        <div style="display:flex; gap:8px; margin-top:8px; align-items:center">
+          <button id="saveReceiptBtn">Save Receipt (.txt)</button>
+          <div class="muted">Saved receipts are also stored in browser (localStorage).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <strong>Saved Records</strong>
+      <div style="margin-top:12px">
+        <div class="records-list" id="recordsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Utilities
+    const $ = id => document.getElementById(id);
+
+    function genReceiptNumber(){
+      return Math.floor(Math.random()*9000) + 1000; // 1000-9999
+    }
+
+    // State
+    let receiptNumber = genReceiptNumber();
+    $('receiptNo').value = receiptNumber;
+
+    function formatReceipt(){
+      const name = $('studentName').value.trim();
+      const roll = $('rollNo').value.trim();
+      const f = $('fiction').value || 0;
+      const nf = $('nonfiction').value || 0;
+      const j = $('journals').value || 0;
+      const r = $('reference').value || 0;
+      const t = $('technical').value || 0;
+
+      let lines = [];
+      lines.push('\t*** Library Borrow Receipt ***');
+      lines.push('');
+      lines.push('Receipt No: ' + receiptNumber);
+      lines.push('Student Name: ' + (name || '<not provided>'));
+      lines.push('SUC No: ' + (roll || '<not provided>'));
+      lines.push('===================================');
+      lines.push('Book Category\tQuantity');
+      lines.push('===================================');
+
+      if (Number(f) > 0) lines.push('Fiction\t\t' + f);
+      if (Number(nf) > 0) lines.push('Non-Fiction\t' + nf);
+      if (Number(j) > 0) lines.push('Journal\t\t' + j);
+      if (Number(r) > 0) lines.push('Reference\t\t' + r);
+      if (Number(t) > 0) lines.push('Technical\t\t' + t);
+
+      lines.push('-----------------------------------');
+      lines.push('Books Issued Successfully');
+      lines.push('Return within 30 days to avoid fine.');
+
+      return lines.join('\n');
+    }
+
+    function validateInputs(){
+      const name = $('studentName').value.trim();
+      const roll = $('rollNo').value.trim();
+      if (!name || !roll) {
+        alert('Student name and SUC No are required.');
+        return false;
+      }
+      // Ensure numeric book fields non-negative
+      const fields = ['fiction','nonfiction','journals','reference','technical'];
+      for (let id of fields){
+        const v = $(''+id).value;
+        if (v === '' || Number(v) < 0 || isNaN(Number(v))){
+          alert('Book quantities must be numbers >= 0');
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function issueBooks(){
+      if (!validateInputs()) return;
+      const content = formatReceipt();
+      $('receiptArea').value = content;
+
+      // Ask to save
+      const doSave = confirm('Do you want to save the record?');
+      if (doSave) saveRecord(content);
+
+      // prepare new receipt number
+      receiptNumber = genReceiptNumber();
+      $('receiptNo').value = receiptNumber;
+    }
+
+    function saveRecord(text){
+      // Save to localStorage
+      const records = JSON.parse(localStorage.getItem('library_records') || '[]');
+      const filename = receiptNumber + '.txt';
+      const record = {id: receiptNumber, name: $('studentName').value.trim(), roll: $('rollNo').value.trim(), filename, content: text, created: new Date().toISOString() };
+      records.push(record);
+      localStorage.setItem('library_records', JSON.stringify(records));
+      refreshRecords();
+      // trigger download
+      downloadText(filename, text);
+      alert('Record ' + receiptNumber + ' saved successfully');
+    }
+
+    function downloadText(filename, content){
+      const blob = new Blob([content], {type:'text/plain'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function clearForm(){
+      $('studentName').value = '';
+      $('rollNo').value = '';
+      $('fiction').value = 0;
+      $('nonfiction').value = 0;
+      $('journals').value = 0;
+      $('reference').value = 0;
+      $('technical').value = 0;
+      $('receiptArea').value = '';
+      receiptNumber = genReceiptNumber();
+      $('receiptNo').value = receiptNumber;
+    }
+
+    function refreshRecords(){
+      const list = $('recordsList');
+      const records = JSON.parse(localStorage.getItem('library_records') || '[]');
+      if (records.length === 0){
+        list.innerHTML = '<div class="muted">No saved records in this browser.</div>';
+        return;
+      }
+      list.innerHTML = records.slice().reverse().map(r => {
+        return `<div style="padding:8px;border-bottom:1px solid #f0f3f7"><strong>#${r.id}</strong> — ${r.name || '<no name>'} (${r.roll || '—'})<div class="small muted">${new Date(r.created).toLocaleString()}</div><div style="margin-top:6px"><button data-id="${r.id}" class="downloadBtn">Download</button> <button data-id="${r.id}" class="deleteBtn">Delete</button></div></div>`
+      }).join('');
+
+      // attach listeners for buttons
+      list.querySelectorAll('.downloadBtn').forEach(btn => btn.addEventListener('click', e => {
+        const id = e.target.dataset.id;
+        const rec = records.find(x=>String(x.id)===String(id));
+        if (rec) downloadText(rec.filename, rec.content);
+      }));
+      list.querySelectorAll('.deleteBtn').forEach(btn => btn.addEventListener('click', e => {
+        const id = e.target.dataset.id;
+        if (!confirm('Delete record ' + id + '?')) return;
+        const filtered = records.filter(x=>String(x.id)!==String(id));
+        localStorage.setItem('library_records', JSON.stringify(filtered));
+        refreshRecords();
+      }));
+    }
+
+    // Download all records as a single zip-like text file (concatenate)
+    function downloadAll(){
+      const records = JSON.parse(localStorage.getItem('library_records') || '[]');
+      if (records.length === 0){ alert('No records to download'); return; }
+      let all = '';
+      records.forEach(r => { all += '---\n'; all += r.content + '\n\n'; });
+      downloadText('library_records_all.txt', all);
+    }
+
+    // Wire up
+    $('issueBtn').addEventListener('click', issueBooks);
+    $('clearBtn').addEventListener('click', clearForm);
+    $('saveReceiptBtn').addEventListener('click', () => {
+      const text = $('receiptArea').value;
+      if (!text) { alert('No receipt to save. Please Issue Books first.'); return; }
+      // save using current shown receiptNumber (note: we already rotated the number after issue)
+      // create a filename using timestamp
+      const now = new Date();
+      const filename = ($('receiptNo').value || receiptNumber) + '_' + now.getTime() + '.txt';
+      downloadText(filename, text);
+      alert('Downloaded: ' + filename);
+    });
+    $('downloadAllBtn').addEventListener('click', downloadAll);
+
+    // initialize
+    refreshRecords();
+  </script>
+</body>
+</html>
